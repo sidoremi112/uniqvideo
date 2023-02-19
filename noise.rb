@@ -1,6 +1,20 @@
 #!/usr/bin/env ruby
 require 'ruby-progressbar'
 require 'streamio-ffmpeg'
+class RandomSymbolGenerator
+  attr_reader :symbols, :queue
+
+  def initialize(data=nil)
+    @symbols = (Array(data || %w[! @ # $ % ^ & *]).join.chars.map{|x| x=='\\' ? '\\\\' : x})
+    @queue = symbols.dup
+  end
+
+  def get
+    symbol = queue.shift
+    queue << symbol
+    symbol
+  end
+end
 
 input_filename = ARGV[0]
 output_prefix = ARGV[1] || File.basename(input_filename, ".*")
@@ -26,6 +40,8 @@ progressbar = ProgressBar.create(
   starting_at: 0.0,
   total: copies.to_f
 )
+black = RandomSymbolGenerator.new('\|/|')
+white = RandomSymbolGenerator.new('-')
 
 copies.times do |i|
   video_bitrate = rand(min_bitrate...max_bitrate)
@@ -39,8 +55,10 @@ copies.times do |i|
   output_file = "#{output_prefix}#{i + 1}.mp4"
   progressbar.title = "#{i+1}/#{copies}"
   input_file.transcode(output_file, ffmpeg_options) do |progress|
+    print "\r\033[K"
+    progressbar.progress_mark = black.get
+    progressbar.remainder_mark = white.get
     progressbar.progress = progress + i
-    progressbar.progress_mark = %W(= # $ % &).sample
   end
 
   print "\r\033[K"
