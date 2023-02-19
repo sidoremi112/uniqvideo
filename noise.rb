@@ -1,45 +1,45 @@
 #!/usr/bin/env ruby
-# frozen_string_literal: true
-
+require 'ruby-progressbar'
 require 'streamio-ffmpeg'
 
-# Get the input filename from the first command line argument
 input_filename = ARGV[0]
-
-# Check if input file exists
-if !File.file?(input_filename)
-  puts "Error: Input file '#{input_filename}' not found"
-  exit(1)
+output_prefix = ARGV[1] || File.basename(input_filename, ".*")
+if !File.exist?(input_filename)
+  STDERR.puts "Error: input file does not exist"
+  exit 1
 end
 
-# Extract the input filename without extension
-prefix = File.basename(input_filename, ".*")
-
-# Get the output prefix from the second command line argument, or use the input filename without extension as the default
-output_prefix = ARGV[1] || prefix
-
-# Get the number of output copies from the third command line argument, or use 4 as the default
-copies = (ARGV[2] || 4).to_i
-
-# Define the output file format
-output_format = '.mp4'
-
-# Define the FFmpeg options as a Hash
-ffmpeg_options = {
-  video_bitrate: 600,
-  custom: ['-vf', "noise=alls=#{rand(1...20)}:allf=t+u"]
-}
-
-# Load the original video file
 input_file = FFMPEG::Movie.new(input_filename)
 
-# Generate the output files with the specified options
-copies.times do |i|
-  output_file = output_prefix + "_#{i + 1}" + output_format
-  input_file.transcode(output_file, ffmpeg_options) do |progress|
-    print "\r\033[K#{sprintf("%0.2f%%", progress * 100)}"
-  end
-end
+min_bitrate = 600
+max_bitrate = 1200
+min_noise = 1
+max_noise = 20
+default_copies = 3
+copies = ARGV[2].to_i || default_copies
 
-# Clear the current line without printing a newline character
-print "\r\033[K"
+copies.times do |i|
+  video_bitrate = rand(min_bitrate...max_bitrate)
+  noise = rand(min_noise...max_noise)
+
+  ffmpeg_options = {
+    video_bitrate: video_bitrate,
+    custom: %W[-vf noise=alls=#{noise}:allf=t+u]
+  }
+
+  progressbar = ProgressBar.create(
+    title: "#{i + 1}/#{copies}",
+    format: '%t: %f [%B] %P%%     ',
+    progress_mark: "=",
+    remainder_mark: " ",
+    starting_at: 0.0,
+    total: 1.0
+  )
+
+  output_file = "#{output_prefix}#{i + 1}.mp4"
+  input_file.transcode(output_file, ffmpeg_options) do |progress|
+    progressbar.progress = progress
+  end
+
+  print "\r\033[K"
+end
