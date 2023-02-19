@@ -15,12 +15,12 @@ black = RandomSymbolGenerator.new('\|/|')
 white = RandomSymbolGenerator.new('-')
 
 progressbar = ProgressBar.create(
-title: "0/#{copies}",
-format: '%t %a [%B] %J%% %f  ',
-progress_mark: "=",
-remainder_mark: " ",
-starting_at: 0.0,
-total: copies.to_f
+  title: "0/#{copies}",
+  format: '%t %a [%B] %J%% %f  ',
+  progress_mark: "=",
+  remainder_mark: " ",
+  starting_at: 0.0,
+  total: copies.to_f
 )
 
 input_filename = ARGV[0]
@@ -32,8 +32,8 @@ copies.times do |i|
   noise = rand(min_noise...max_noise)
 
   ffmpeg_options = {
-  video_bitrate: video_bitrate,
-  custom: %W[-vf noise=alls=#{noise}:allf=t+u]
+    video_bitrate: video_bitrate,
+    custom: %W[-vf noise=alls=#{noise}:allf=t+u]
   }
 
   output_file = "#{output_prefix}#{i + 1}.mp4"
