@@ -1,0 +1,4 @@
+*.mp4
+*.lock
+*.idea
+**/.DS_Store
